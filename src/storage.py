@@ -52,6 +52,9 @@ class StorageManager(object):
     def get_known_files(self):
         return self.__known_files
 
+    def update_change(self, file_bytes, filename, md5):
+        # ToDO work on this
+
 
 def get_md5_for_file(file_path: str):
     hash_md5 = hashlib.md5()

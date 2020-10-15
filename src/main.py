@@ -26,20 +26,20 @@ class Main(object):
         self.__sync_directory_path = self.__config.get('Settings', 'path')
 
         self.__storage_manager = StorageManager(self.__sync_directory_path)
-        self.__network_manager = NetworkManager()
+        self.__network_manager = NetworkManager(self.__storage_manager)
 
     def start(self):
         while self.__active:
             changed_files = self.__storage_manager.check_files_for_changes()
 
-            if self.__network_manager.currently_receiving()
+            if self.__network_manager.in_progress:
+                self.__unhandled_files.extend(changed_files)
+                continue
 
             if changed_files != [] and self.__network_manager.get_connections() != []:
                 # Todo: Upload and change files
 
                 unhandled_files = []
-
-
 
             time.sleep(self.__sleep_time)
 
