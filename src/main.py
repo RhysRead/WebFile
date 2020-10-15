@@ -9,6 +9,7 @@ import configparser
 import time
 
 from storage import StorageManager
+from network import NetworkManager
 
 CONFIG_PATH = "../data/config.ini"
 
@@ -19,16 +20,24 @@ class Main(object):
 
         self.__config = get_config()
 
+        self.__unhandled_files = []
+
         self.__sleep_time = int(self.__config.get('Settings', 'frequency'))
         self.__sync_directory_path = self.__config.get('Settings', 'path')
 
         self.__storage_manager = StorageManager(self.__sync_directory_path)
+        self.__network_manager = NetworkManager()
 
     def start(self):
         while self.__active:
             changed_files = self.__storage_manager.check_files_for_changes()
 
-            if changed_files != []:
+            if self.__network_manager.currently_receiving()
+
+            if changed_files != [] and self.__network_manager.get_connections() != []:
+                # Todo: Upload and change files
+
+                unhandled_files = []
 
 
 
