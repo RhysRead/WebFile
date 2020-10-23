@@ -31,7 +31,7 @@ class StorageManager(object):
         # Check for creation, deletion, or changes in files
         for file_name in file_names:
 
-            file_md5 = get_md5_for_file(CUR_PATH + file_name)
+            file_md5 = get_md5_for_file(self.__folder_path + '\\' + file_name)
 
             # ToDo: Check if the follow if statement is most efficient?
             # Check if file is known
@@ -40,17 +40,20 @@ class StorageManager(object):
                 if file_md5 != self.__known_files[file_name]:
                     # If file md5 checksum has changed, log file name and set new checksum
                     # file: UPDATED
+                    logging.info(f'File updated: {file_name}')
                     changed_files.append([file_name, 2, file_md5])
-                    self.__known_files[file_name] = changed_files
+                    self.__known_files[file_name] = file_md5
             else:
                 # file: CREATED
+                logging.info(f'File created: {file_name}')
                 changed_files.append([file_name, 0, file_md5])
-                self.__known_files[file_name] = changed_files
+                self.__known_files[file_name] = file_md5
 
         # Get removed file names
         removed_file_names = list(set(self.__known_files.keys()) - set(file_names))
         for file_name in removed_file_names:
             # file: DELETED
+            logging.info(f'File deleted: {file_name}')
             changed_files.append([file_name, 1, file_md5])
 
         return changed_files

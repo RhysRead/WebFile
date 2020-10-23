@@ -29,7 +29,7 @@ class Main(object):
         self.__sync_directory_path = self.__config.get('Settings', 'path')
 
         self.__storage_manager = StorageManager(self.__sync_directory_path)
-        self.__network_manager = NetworkManager(self.__storage_manager)
+        self.__network_manager = NetworkManager(self.__storage_manager, permanent_connections=['127.0.0.1'])
 
     def start(self):
         self.__network_manager.start_listening()
@@ -45,8 +45,10 @@ class Main(object):
 
             if changed_files != [] and self.__network_manager.get_connections() != []:
                 for filename_code_md5 in changed_files:
+                    print(filename_code_md5)
                     if filename_code_md5[1] == 0 or filename_code_md5[1] == 2:
                         try:
+                            print('sending mothafucka')
                             self.__network_manager.transfer_file(filename_code_md5[0], filename_code_md5[2])
                             changed_files.remove(filename_code_md5)
                         except Exception as E:
