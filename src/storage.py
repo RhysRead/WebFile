@@ -7,6 +7,7 @@ __copyright__ = "Copyright 2020, Rhys Read"
 
 import os
 import hashlib
+import logging
 
 CUR_PATH = os.path.abspath(os.getcwd())
 
@@ -16,7 +17,12 @@ class StorageManager(object):
         self.__folder_path = folder_path
         self.__known_files = {}
 
+    def get_folder_path(self):
+        return self.__folder_path
+
     def check_files_for_changes(self):
+        logging.info(f'Checking files for changes in: {self.get_folder_path()}')
+
         # Create return variable for changed files
         changed_files = []  # [[filename, filestatus]] (filestatus: 0=created, 1=deleted, 2=updated)
         # Get list of file names in sync directory
@@ -34,26 +40,37 @@ class StorageManager(object):
                 if file_md5 != self.__known_files[file_name]:
                     # If file md5 checksum has changed, log file name and set new checksum
                     # file: UPDATED
-                    changed_files.append([file_name, 2])
+                    changed_files.append([file_name, 2, file_md5])
                     self.__known_files[file_name] = changed_files
             else:
                 # file: CREATED
-                changed_files.append([file_name, 0])
+                changed_files.append([file_name, 0, file_md5])
                 self.__known_files[file_name] = changed_files
 
         # Get removed file names
         removed_file_names = list(set(self.__known_files.keys()) - set(file_names))
         for file_name in removed_file_names:
             # file: DELETED
-            changed_files.append([file_name, 1])
+            changed_files.append([file_name, 1, file_md5])
 
         return changed_files
 
     def get_known_files(self):
         return self.__known_files
 
+    def __create_file(self, file_bytes, filename):
+        with open(self.__folder_path + '/' + filename, 'w') as file:
+            file.write(file_bytes)
+
     def update_change(self, file_bytes, filename, md5):
-        # ToDO work on this
+        if filename not in self.__known_files.keys():
+            self.__create_file(file_bytes, filename)
+
+        got_md5 = get_md5_for_file(self.__folder_path + '/' + filename)
+
+        # ToDo: Not sure if __create_file will work to just overwrite an existing file
+        if got_md5 != md5:
+            self.__create_file(file_bytes, filename)
 
 
 def get_md5_for_file(file_path: str):

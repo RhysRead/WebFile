@@ -7,9 +7,12 @@ __copyright__ = "Copyright 2020, Rhys Read"
 
 import configparser
 import time
+import logging
 
 from storage import StorageManager
 from network import NetworkManager
+
+logging.basicConfig(level=logging.DEBUG)
 
 CONFIG_PATH = "../data/config.ini"
 
@@ -29,6 +32,8 @@ class Main(object):
         self.__network_manager = NetworkManager(self.__storage_manager)
 
     def start(self):
+        self.__network_manager.start_listening()
+
         while self.__active:
             changed_files = self.__storage_manager.check_files_for_changes()
 
@@ -36,10 +41,18 @@ class Main(object):
                 self.__unhandled_files.extend(changed_files)
                 continue
 
-            if changed_files != [] and self.__network_manager.get_connections() != []:
-                # Todo: Upload and change files
+            changed_files.extend(self.__unhandled_files)
 
-                unhandled_files = []
+            if changed_files != [] and self.__network_manager.get_connections() != []:
+                for filename_code_md5 in changed_files:
+                    if filename_code_md5[1] == 0 or filename_code_md5[1] == 2:
+                        try:
+                            self.__network_manager.transfer_file(filename_code_md5[0], filename_code_md5[2])
+                            changed_files.remove(filename_code_md5)
+                        except Exception as E:
+                            print(E)
+
+                self.__unhandled_files.extend(changed_files)
 
             time.sleep(self.__sleep_time)
 

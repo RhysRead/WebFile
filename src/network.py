@@ -16,36 +16,26 @@ SEPARATOR = '<SEPARATOR>'
 BUFFER_SIZE = 4096  # (bytes)
 
 LISTEN_PORT = 5001
-SEND_PORT = 5002
-
-
-class TransferTemplate(object):
-    def __init__(self, file: str, filename: str, md5: str):
-        self.__file = file
-        self.__filename = filename
-        self.__md5 = md5
-
-    def get_file_bytes(self):
-        return bytearray(self.__file)
 
 
 def listen(storage_manager: object):
+    # Create bound socket
+    s = socket.socket()
+    s.bind((HOST, LISTEN_PORT))
+    s.listen(4)
+
+    logging.info(f'Listening as {HOST}:{LISTEN_PORT}')
+
     while True:
-        # Create bound socket
-        s = socket.socket()
-        s.bind((HOST, LISTEN_PORT))
-        s.listen(4)
-
-        logging.info(f'Listening as {HOST}:{LISTEN_PORT}')
-
         # Accept connections and receive filename and filesize
         client_socket, address = s.accept()
         received = client_socket.recv(BUFFER_SIZE).decode()
-        filename, filesize = received.split(SEPARATOR)
+        filename, filesize, md5 = received.split(SEPARATOR)
 
         # Minor formatting
-        filename = os.path.basename(filename)
+        filename = str(filename)
         filesize = int(filesize)
+        md5 = str(md5)
 
         # Receive file
         file = bytearray()
@@ -59,9 +49,30 @@ def listen(storage_manager: object):
             file.extend(bytes_read)
 
         # ToDo: ensure this is all correct
-        storage_manager.update_change()
+        # ToDo: Add md5 to transfer
+        storage_manager.update_change(file, filename, md5)
 
-# ToDo: Create send method
+
+def send(address, filename, md5):
+    s = socket.socket()
+
+    logging.info(f'Connecting to {address}:{LISTEN_PORT}')
+
+    s.connect((address, LISTEN_PORT))
+
+    logging.info('Connected.')
+
+    s.send(f"{filename}{SEPARATOR}{os.path.getsize(filename)}".encode())
+
+    with open(filename, 'rb') as file:
+        while True:
+            bytes_read = file.read(BUFFER_SIZE)
+            if not bytes_read:
+                # file transmitting is done
+                break
+            s.sendall(bytes_read)
+        # close the socket
+    s.close()
 
 
 class NetworkManager(object):
@@ -71,13 +82,18 @@ class NetworkManager(object):
         self.__storage_manager = storage_manager
         self.__connections = []
         self.__connections.extend(permanent_connections)
+        self.__threads = []
 
     def start_listening(self):
         worker = Thread(target=listen, args=(self.__storage_manager,))
+        worker.daemon = True
+        worker.start()
+
+        self.__threads.append(worker)
 
     def get_connections(self):
         return self.__connections
 
-    def transfer_files(self):
-        # ToDo
-        pass
+    def transfer_file(self, filename, md5):
+        for address in self.__connections:
+            send(address, filename, md5)
