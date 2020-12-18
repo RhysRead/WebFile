@@ -28,7 +28,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-There are many file back-up services and cloud based storage services. This application is a peer-to-peer backup service which allows
+There are many file back-up services and cloud-based storage services. This application is a peer-to-peer backup service which allows
 you to create a synchronised directory across multiple machines which will update automatically when changes are made to the contents
 of the directory.
 
