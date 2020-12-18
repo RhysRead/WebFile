@@ -46,11 +46,13 @@ class StorageManager(object):
                 if file_md5 != self.__known_files[file_name]:
                     # If file md5 checksum has changed, log file name and set new checksum
                     # file: UPDATED
+                    # code: 2
                     logging.info(f'File updated: {file_name}')
                     changed_files.append([file_name, 2, file_md5])
                     self.__known_files[file_name] = file_md5
             else:
                 # file: CREATED
+                # code: 0
                 logging.info(f'File created: {file_name}')
                 changed_files.append([file_name, 0, file_md5])
                 self.__known_files[file_name] = file_md5
@@ -59,6 +61,7 @@ class StorageManager(object):
         removed_file_names = list(set(self.__known_files.keys()) - set(file_names))
         for file_name in removed_file_names:
             # file: DELETED
+            # code: 1
             logging.info(f'File deleted: {file_name}')
             changed_files.append([file_name, 1, file_md5])
 

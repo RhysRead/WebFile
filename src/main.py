@@ -15,6 +15,7 @@ from network import NetworkManager
 logging.basicConfig(level=logging.DEBUG)
 
 CONFIG_PATH = "../data/config.ini"
+CUSTOM_SYNC_PATH = False
 
 
 class Main(object):
@@ -26,7 +27,11 @@ class Main(object):
         self.__unhandled_files = []
 
         self.__sleep_time = int(self.__config.get('Settings', 'frequency'))
-        self.__sync_directory_path = self.__config.get('Settings', 'path')
+
+        if not CUSTOM_SYNC_PATH:
+            self.__sync_directory_path = self.__config.get('Settings', 'path')
+        else:
+            self.__sync_directory_path = input('Please enter custom sync path: ')
 
         self.__storage_manager = StorageManager(self.__sync_directory_path)
         self.__network_manager = NetworkManager(self.__storage_manager, permanent_connections=['127.0.0.1'])
@@ -34,25 +39,33 @@ class Main(object):
     def start(self):
         self.__network_manager.start_listening()
 
+        # Main Loop
         while self.__active:
+            # Check files for changes
             changed_files = self.__storage_manager.check_files_for_changes()
 
+            # Ensure network functionality is not already in use
             if self.__network_manager.in_progress:
                 self.__unhandled_files.extend(changed_files)
                 continue
 
+            # Add unhandled changes to changed files
             changed_files.extend(self.__unhandled_files)
 
+            # If any files have changed and there are active connections
             if changed_files != [] and self.__network_manager.get_connections() != []:
+                # Iterate through changes and attempt to transmit to active connections
+                # code: O
                 for filename_code_md5 in changed_files:
-                    print(filename_code_md5)
+
                     if filename_code_md5[1] == 0 or filename_code_md5[1] == 2:
-                        try:
-                            print('sending mothafucka')
-                            self.__network_manager.transfer_file(filename_code_md5[0], filename_code_md5[2])
-                            changed_files.remove(filename_code_md5)
-                        except Exception as E:
-                            print(E)
+                        # try:
+                        # Send file
+                        logging.info('Sending file changes for file name: ' + filename_code_md5[0])
+                        self.__network_manager.transfer_file(filename_code_md5[0], filename_code_md5[2])
+                        changed_files.remove(filename_code_md5)
+                        # except Exception as E:
+                        # logging.info('Exception:\n' + str(E))
 
                 self.__unhandled_files.extend(changed_files)
 

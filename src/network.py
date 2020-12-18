@@ -32,6 +32,8 @@ def listen(storage_manager: object):
         received = client_socket.recv(BUFFER_SIZE).decode()
         filename, filesize, md5 = received.split(SEPARATOR)
 
+        logging.info('Receiving change for file: ' + filename)
+
         # Minor formatting
         filename = str(filename)
         filesize = int(filesize)
@@ -50,10 +52,14 @@ def listen(storage_manager: object):
 
         # ToDo: ensure this is all correct
         # ToDo: Add md5 to transfer
+
+        logging.info('Received change for file: ' + filename)
+        logging.info('Closing connection.')
+
         storage_manager.update_change(file, filename, md5)
 
 
-def send(address, filename, md5):
+def send(address, filename, md5, directory):
     s = socket.socket()
 
     logging.info(f'Connecting to {address}:{LISTEN_PORT}')
@@ -62,9 +68,9 @@ def send(address, filename, md5):
 
     logging.info('Connected.')
 
-    s.send(f"{filename}{SEPARATOR}{os.path.getsize(filename)}".encode())
+    s.send(f"{filename}{SEPARATOR}{os.path.getsize(directory + '/' + filename)}{SEPARATOR}{md5}".encode())
 
-    with open(filename, 'rb') as file:
+    with open(directory + '/' + filename, 'rb') as file:
         while True:
             bytes_read = file.read(BUFFER_SIZE)
             if not bytes_read:
@@ -72,6 +78,9 @@ def send(address, filename, md5):
                 break
             s.sendall(bytes_read)
         # close the socket
+
+    logging.info('Change transferred. Closing connection.')
+
     s.close()
 
 
@@ -96,4 +105,4 @@ class NetworkManager(object):
 
     def transfer_file(self, filename, md5):
         for address in self.__connections:
-            send(address, filename, md5)
+            send(address, filename, md5, self.__storage_manager.get_folder_path())
