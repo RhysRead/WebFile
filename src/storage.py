@@ -15,6 +15,12 @@ CUR_PATH = os.path.abspath(os.getcwd())
 class StorageManager(object):
     def __init__(self, folder_path: str):
         self.__folder_path = folder_path
+
+        if not os.path.exists(self.__folder_path):
+            logging.info('Synchronised directory listed in config does not exist.'
+                         '\nCreating new directory at :' + self.__folder_path)
+            os.mkdir(self.__folder_path)
+
         self.__known_files = {}
 
     def get_folder_path(self):
